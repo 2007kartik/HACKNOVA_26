@@ -1,0 +1,74 @@
+Meeting: Q3 Product Roadmap Planning
+Date: October 23, 2026
+Participants: Sarah (Product Manager), James (Engineering Lead), Priya (Design Lead), Marcus (Business Analyst)
+
+---
+
+Sarah: Alright everyone, let's get started. We have a lot to cover today — mainly finalizing the Q3 roadmap priorities and making sure we all have clear action items before the sprint kicks off on Monday. James, do you want to start with the engineering status?
+
+James: Sure. So, the authentication service refactor is done, we merged it last night. The main thing blocking us now is the new API gateway — we need to finish that before we can work on the mobile sync feature.
+
+Sarah: Right. So the decision is — the API gateway goes into sprint one, mobile sync is sprint two. James, can you own the API gateway delivery? I need it done by November 7th.
+
+James: Yeah, I can take that. November 7th works.
+
+Sarah: Great. And Priya, the design system audit — what's the status there?
+
+Priya: We finished the component inventory. I still need to write up the accessibility violations report. I'm thinking the team should review it before we publish it. Maybe someone from engineering should be involved.
+
+Sarah: Let's keep ownership with you for now. Can you have the accessibility violations report ready by end of next week?
+
+Priya: That should be fine. I'll target October 30th.
+
+Sarah: Perfect. Marcus, what did the customer interviews surface?
+
+Marcus: A few things. The biggest theme was that users are confused about the dashboard — they don't understand what the status badges mean. Secondly, three enterprise clients specifically asked for CSV export of their task data. The third thing is there's a question around whether we should integrate with Microsoft Teams or stick with Slack for notifications.
+
+Sarah: Okay so on the dashboard clarity — that's clearly something we need to fix. James, I want engineering to create tickets for all the dashboard UX issues Marcus identified. Can you do that?
+
+James: Sure, I'll create the GitHub issues this week. Let's say by October 27th.
+
+Sarah: And on the CSV export — that's a confirmed feature for Q3. Priya, can design produce the export flow mockups?
+
+Priya: Yes, I can do those. I'll need until November 3rd for the mockups.
+
+Marcus: I'd also suggest we add a JSON export option alongside CSV. Just makes it more flexible for enterprise clients.
+
+Sarah: Good suggestion, let's include that. So the export feature covers both CSV and JSON — confirmed. James, that goes into the API layer, right?
+
+James: Correct. I can start on it after the API gateway. I'd estimate we wrap up the export API by November 14th.
+
+Sarah: On the Teams vs Slack question — I don't think we can decide that today. Marcus, can you survey the enterprise clients and come back with a recommendation?
+
+Marcus: Sure. I can get back to you by November 5th with that.
+
+Sarah: Now, there's also the onboarding flow redesign. Priya, I know you've been wanting to revisit that.
+
+Priya: Yes, definitely. The current onboarding drop-off rate is 34% which is not acceptable. I'd like to propose a full redesign of the onboarding wizard. We could target a 15% reduction in drop-off.
+
+Sarah: I like it. Let's get it into the roadmap as a Q3 initiative. Priya, you own the design, and James, your team handles the implementation. Can we target a ship date of November 21st for the MVP onboarding redesign?
+
+James: That's tight with everything else. I'd push back and say November 28th is more realistic given the API gateway work.
+
+Priya: I'm fine with November 28th.
+
+Sarah: Okay, November 28th it is — that's confirmed. But Priya, I need your designs ready two weeks before that so engineering has time. So designs by November 14th.
+
+Priya: Yes, that works.
+
+Sarah: One more thing. The analytics dashboard refactor has been on the backlog forever. Marcus, should we finally prioritize it?
+
+Marcus: Honestly, the enterprise clients haven't asked for it specifically. I'd say we table it for Q4 and revisit.
+
+Sarah: Fair. Let's leave it off for now. James, can you make sure there's a backlog ticket for it so we don't lose it?
+
+James: Already exists — I'll just update the priority label.
+
+Sarah: Alright. Let me summarize the key decisions before we close. One — API gateway is sprint one, James owns it, due November 7th. Two — CSV and JSON export is confirmed for Q3, Priya does mockups by November 3rd, James builds the API by November 14th. Three — onboarding wizard redesign is confirmed for Q3, designs by November 14th, implementation ships November 28th. Four — analytics dashboard refactor is deferred to Q4. Five — Marcus will survey clients on Teams vs Slack by November 5th. And Priya has the accessibility violations report due October 30th. James is creating dashboard UX GitHub issues by October 27th. Any questions?
+
+James: I just want to flag — the export API and the onboarding implementation overlap in the same sprint. The team may need to be split. I'll figure it out but just flagging it.
+
+Sarah: Noted. Let's sync again Friday to check. Okay, we're done. Thanks everyone.
+
+---
+[End of transcript]
