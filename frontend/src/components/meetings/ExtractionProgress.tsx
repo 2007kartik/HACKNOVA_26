@@ -23,7 +23,7 @@ export const ExtractionProgress: React.FC<ExtractionProgressProps> = ({ elapsedS
       </div>
 
       <h3 className="text-xl font-bold text-slate-900 tracking-tight">
-        AI is analyzing your meeting...
+        MeetingFlow AI is analyzing your meeting...
       </h3>
       <p className="text-sm text-slate-600 mt-1.5 max-w-md mx-auto">
         Deep analysis in progress. Extracting confirmed commitments, mapping owners and deadlines, and flagging any ambiguities.

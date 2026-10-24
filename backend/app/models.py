@@ -78,6 +78,7 @@ class Meeting(Base):
         nullable=False,
         default=MeetingStatusEnum.CREATED,
     )
+    summary           = Column(Text, nullable=True)  # AI-generated meeting summary
     error_message     = Column(Text, nullable=True)
     created_at        = Column(DateTime(timezone=True), nullable=False, default=_now)
 

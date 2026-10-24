@@ -126,6 +126,7 @@ class PipelineResult(BaseModel):
     items:                List[ExtractedItem]
     links:                List[DuplicateLink] = Field(default_factory=list)
     participants_detected: List[str] = Field(default_factory=list)
+    summary:              Optional[str] = None  # One-paragraph meeting summary
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -140,6 +141,7 @@ class MeetingOut(BaseModel):
     date:          date
     participants:  List[str] = Field(default_factory=list)
     status:        MeetingStatus
+    summary:       Optional[str] = None
     error_message: Optional[str] = None
     created_at:    datetime
 

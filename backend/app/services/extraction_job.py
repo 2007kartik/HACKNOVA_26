@@ -142,8 +142,9 @@ def run_extraction(meeting_id: str, db: Session) -> None:
             )
             db.add(link_row)
 
-        # ── 6. Mark meeting as EXTRACTED ──────────────────────────────────────
+        # ── 6. Mark meeting as EXTRACTED and save summary ─────────────────────
         meeting.status = MeetingStatus.EXTRACTED.value
+        meeting.summary = result.summary or ""
         db.commit()
 
         logger.info(

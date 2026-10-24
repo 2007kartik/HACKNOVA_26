@@ -225,5 +225,6 @@
       "explanation": "Item 5 (export API due November 14th) and Item 7 (onboarding implementation due November 28th) are both assigned to James/engineering in overlapping sprints. James explicitly flagged a resource conflict. These tasks may compete for the same engineering capacity."
     }
   ],
-  "participants_detected": ["Sarah", "James", "Priya", "Marcus"]
+  "participants_detected": ["Sarah", "James", "Priya", "Marcus"],
+  "summary": "The team discussed API gateway delivery, mobile sync challenges, and CSV export features. Key commitments include James delivering the gateway by November 7th and the team clarifying onboarding flow requirements before implementation."
 }

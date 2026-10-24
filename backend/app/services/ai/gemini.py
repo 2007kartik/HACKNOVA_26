@@ -217,10 +217,15 @@ def call_gemini(
     )
 
     links = _parse_links(raw_links, len(items))
+    
+    # ── Pass 3: Summary (quick, non-blocking) ─────────────────────────────────
+    summary = _generate_summary(api_key, model_name, meeting.raw_text, meeting.title)
+    
     return PipelineResult(
         items=items,
         links=links,
         participants_detected=participants_detected,
+        summary=summary,
     )
 
 
@@ -381,3 +386,35 @@ def _wrap_gemini_error(exc: Exception, pass_name: str) -> Exception:
         f"Gemini {pass_name} failed unexpectedly: {exc}",
         details={"error_type": type(exc).__name__},
     )
+
+
+def _generate_summary(api_key: str, model_name: str, raw_text: str, title: str) -> str:
+    """
+    Generate a one-paragraph summary of the meeting.
+    Non-fatal — returns empty string on failure.
+    """
+    try:
+        model = _get_model(api_key, model_name)
+        prompt = f"""
+You are summarizing a meeting transcript.
+
+Title: {title}
+
+Transcript:
+{raw_text[:3000]}
+
+Write a single paragraph (2-3 sentences) summarizing the key topics discussed and main outcomes.
+"""
+        response = model.generate_content(
+            prompt,
+            generation_config=GenerationConfig(
+                temperature=0.3,
+                max_output_tokens=200,
+            ),
+        )
+        summary = response.text.strip() if response and response.text else ""
+        logger.info("Summary generated: %d chars", len(summary))
+        return summary
+    except Exception as exc:
+        logger.warning("Summary generation failed (non-fatal): %s", exc)
+        return ""

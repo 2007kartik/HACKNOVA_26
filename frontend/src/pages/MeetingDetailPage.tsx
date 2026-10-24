@@ -257,6 +257,21 @@ export const MeetingDetailPage: React.FC = () => {
           </div>
         </div>
 
+        {/* AI-Generated Summary */}
+        {meeting.status === 'EXTRACTED' && meeting.summary && (
+          <div className="mt-5 p-4 rounded-xl bg-gradient-to-br from-indigo-50 to-violet-50 border border-indigo-100">
+            <div className="flex items-start gap-3">
+              <div className="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center flex-shrink-0">
+                <Sparkles className="w-4 h-4 text-white" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <h3 className="text-xs font-bold uppercase tracking-wider text-indigo-900 mb-1.5">AI Summary</h3>
+                <p className="text-sm leading-relaxed text-slate-700">{meeting.summary}</p>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Collapsible Raw Transcript Section */}
         {meeting.raw_text && (
           <div className="mt-4 pt-4 border-t border-slate-100">
