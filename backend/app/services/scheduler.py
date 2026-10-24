@@ -30,6 +30,7 @@ def trello_sync_job() -> None:
     """
     For every SYNCED item with an external_id, ask Trello for its current list.
     If the card is in a Done list → transition item to DONE.
+    Batches items to reduce log noise.
     """
     from ..db import SessionLocal
     from ..models import Item, Meeting
@@ -54,10 +55,12 @@ def trello_sync_job() -> None:
 
         client = TrelloClient()
         done_count = 0
+        checked = 0
 
         for item in synced_items:
             try:
                 list_name = client.get_task_list_name(item.external_id)
+                checked += 1
                 if client.is_done_list(list_name):
                     transition(db, item, ItemStatus.DONE,
                                actor="system:scheduler",
@@ -69,10 +72,11 @@ def trello_sync_job() -> None:
                 )
 
         db.commit()
-        logger.info(
-            "trello_sync_job: checked %d items, transitioned %d to DONE",
-            len(synced_items), done_count,
-        )
+        # Only log if something happened or at debug level
+        if done_count > 0:
+            logger.info("trello_sync_job: %d/%d items transitioned to DONE", done_count, checked)
+        else:
+            logger.debug("trello_sync_job: checked %d items, none moved to DONE", checked)
     except Exception as exc:
         logger.exception("trello_sync_job failed: %s", exc)
         db.rollback()

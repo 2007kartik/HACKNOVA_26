@@ -106,7 +106,7 @@ def _get_extraction_model(api_key: str, model_name: str) -> genai.GenerativeMode
             response_mime_type="application/json",
             response_schema=_EXTRACTION_RESPONSE_SCHEMA,
             temperature=0.1,
-            max_output_tokens=8192,   # tuned down from 16384 — realistic for most transcripts
+            max_output_tokens=16384,   # needs to be high for long transcripts
         ),
     )
 
