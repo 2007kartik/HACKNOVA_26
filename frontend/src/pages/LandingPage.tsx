@@ -28,7 +28,7 @@ function useReveal() {
 const FEATURES = [
   {
     icon: Brain, color: 'text-indigo-400', border: 'border-indigo-500/30', glow: 'hover:shadow-indigo-500/20',
-    title: 'AI Extraction', tag: 'Gemini 2.5 Flash',
+    title: 'AI Extraction', tag: 'Two-Pass AI',
     desc: 'Two-pass pipeline extracts action items, decisions, follow-ups with owner, deadline, and confidence score.',
   },
   {
@@ -70,7 +70,7 @@ const FEATURES = [
 
 const FLOW = [
   { n: '01', label: 'Paste transcript',    desc: 'Upload or paste your raw meeting notes or recording.' },
-  { n: '02', label: 'AI extracts items',   desc: 'Gemini identifies every commitment, decision, follow-up.' },
+  { n: '02', label: 'AI extracts items',   desc: 'Our AI identifies every commitment, decision, follow-up.' },
   { n: '03', label: 'Clarify ambiguities', desc: 'Fill in missing owners and deadlines before review.' },
   { n: '04', label: 'Approve or reject',   desc: 'One-click approval per item or bulk-approve all ready.' },
   { n: '05', label: 'Push to integrations',desc: 'Trello cards, GitHub issues — created in seconds.' },
@@ -256,7 +256,7 @@ export const LandingPage: React.FC = () => {
             dark ? 'bg-indigo-950/60 text-indigo-300' : 'bg-indigo-50 text-indigo-700'
           }`}>
             <span className="w-1.5 h-1.5 rounded-full bg-indigo-400 animate-pulse" />
-            Powered by Google Gemini 2.5 Flash
+            Powered by Advanced AI
           </div>
 
           {/* Headline */}
@@ -583,7 +583,7 @@ export const LandingPage: React.FC = () => {
           </div>
           <div className={`flex flex-wrap items-center gap-4 text-xs ${dark ? 'text-slate-600' : 'text-slate-400'}`}>
             <span className="flex items-center gap-1"><CheckCircle2 className="w-3 h-3 text-emerald-500" /> 139 tests</span>
-            <span className="flex items-center gap-1"><CheckCircle2 className="w-3 h-3 text-emerald-500" /> Gemini 2.5 Flash</span>
+            <span className="flex items-center gap-1"><CheckCircle2 className="w-3 h-3 text-emerald-500" /> AI-Powered</span>
             <span className="flex items-center gap-1"><CheckCircle2 className="w-3 h-3 text-emerald-500" /> Neon PostgreSQL</span>
             <span className="flex items-center gap-1"><CheckCircle2 className="w-3 h-3 text-emerald-500" /> Trello + GitHub + Slack</span>
           </div>
