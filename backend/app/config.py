@@ -28,6 +28,10 @@ class Settings(BaseSettings):
     # ── Slack ─────────────────────────────────────────────────────────────────
     SLACK_WEBHOOK_URL: str = ""
 
+    # ── GitHub ────────────────────────────────────────────────────────────────
+    GITHUB_TOKEN: str = ""
+    GITHUB_REPO: str = ""   # format: "owner/repo" e.g. "2007kartik/HACKNOVA_26"
+
     # ── CORS ──────────────────────────────────────────────────────────────────
     FRONTEND_ORIGINS: str = "http://localhost:3000,http://localhost:5173"
 
