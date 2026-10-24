@@ -23,6 +23,127 @@ function useReveal() {
   return ref;
 }
 
+// ── Typing effect hook ────────────────────────────────────────────────────────
+const TYPING_WORDS = ['execution', 'action', 'results', 'clarity'];
+
+function useTypingEffect() {
+  const [wordIdx, setWordIdx] = useState(0);
+  const [displayed, setDisplayed] = useState('');
+  const [phase, setPhase] = useState<'typing' | 'pause' | 'deleting'>('typing');
+
+  useEffect(() => {
+    const word = TYPING_WORDS[wordIdx];
+    let timeout: ReturnType<typeof setTimeout>;
+
+    if (phase === 'typing') {
+      if (displayed.length < word.length) {
+        timeout = setTimeout(() => setDisplayed(word.slice(0, displayed.length + 1)), 80);
+      } else {
+        timeout = setTimeout(() => setPhase('pause'), 1800);
+      }
+    } else if (phase === 'pause') {
+      timeout = setTimeout(() => setPhase('deleting'), 400);
+    } else {
+      if (displayed.length > 0) {
+        timeout = setTimeout(() => setDisplayed(displayed.slice(0, -1)), 45);
+      } else {
+        setWordIdx((i) => (i + 1) % TYPING_WORDS.length);
+        setPhase('typing');
+      }
+    }
+    return () => clearTimeout(timeout);
+  }, [displayed, phase, wordIdx]);
+
+  return displayed;
+}
+
+// ── Particle canvas ───────────────────────────────────────────────────────────
+const ParticleField: React.FC<{ dark: boolean }> = ({ dark }) => {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    let animId: number;
+    const particles: Array<{
+      x: number; y: number; vx: number; vy: number;
+      r: number; alpha: number; color: string;
+    }> = [];
+
+    const resize = () => {
+      canvas.width  = canvas.offsetWidth;
+      canvas.height = canvas.offsetHeight;
+    };
+    resize();
+    window.addEventListener('resize', resize);
+
+    const colors = ['#6366f1', '#8b5cf6', '#06b6d4', '#a78bfa'];
+    for (let i = 0; i < 80; i++) {
+      particles.push({
+        x: Math.random() * canvas.width,
+        y: Math.random() * canvas.height,
+        vx: (Math.random() - 0.5) * 0.4,
+        vy: (Math.random() - 0.5) * 0.4,
+        r: Math.random() * 2 + 0.5,
+        alpha: Math.random() * 0.6 + 0.2,
+        color: colors[Math.floor(Math.random() * colors.length)],
+      });
+    }
+
+    const draw = () => {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      particles.forEach((p) => {
+        p.x += p.vx;
+        p.y += p.vy;
+        if (p.x < 0) p.x = canvas.width;
+        if (p.x > canvas.width) p.x = 0;
+        if (p.y < 0) p.y = canvas.height;
+        if (p.y > canvas.height) p.y = 0;
+
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+        ctx.fillStyle = p.color + Math.floor(p.alpha * 255).toString(16).padStart(2, '0');
+        ctx.fill();
+      });
+
+      // Draw connecting lines
+      for (let i = 0; i < particles.length; i++) {
+        for (let j = i + 1; j < particles.length; j++) {
+          const dx = particles[i].x - particles[j].x;
+          const dy = particles[i].y - particles[j].y;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          if (dist < 100) {
+            ctx.beginPath();
+            ctx.moveTo(particles[i].x, particles[i].y);
+            ctx.lineTo(particles[j].x, particles[j].y);
+            ctx.strokeStyle = `rgba(99,102,241,${0.12 * (1 - dist / 100)})`;
+            ctx.lineWidth = 0.5;
+            ctx.stroke();
+          }
+        }
+      }
+      animId = requestAnimationFrame(draw);
+    };
+    draw();
+
+    return () => {
+      cancelAnimationFrame(animId);
+      window.removeEventListener('resize', resize);
+    };
+  }, [dark]);
+
+  return (
+    <canvas
+      ref={canvasRef}
+      className="absolute inset-0 w-full h-full pointer-events-none"
+      style={{ opacity: dark ? 0.7 : 0.4 }}
+    />
+  );
+};
+
 // ── Data ──────────────────────────────────────────────────────────────────────
 
 const FEATURES = [
@@ -144,8 +265,8 @@ const Counter: React.FC<{ value: string }> = ({ value }) => {
 
 // ── 3D Floating card ─────────────────────────────────────────────────────────
 
-const FloatingCard: React.FC<{ children: React.ReactNode; delay?: string; className?: string }> = ({
-  children, delay = '0ms', className = '',
+const FloatingCard: React.FC<{ children: React.ReactNode; delay?: string; className?: string; style?: React.CSSProperties }> = ({
+  children, delay = '0ms', className = '', style,
 }) => {
   const [tilt, setTilt] = useState({ x: 0, y: 0 });
   const cardRef = useRef<HTMLDivElement>(null);
@@ -168,6 +289,7 @@ const FloatingCard: React.FC<{ children: React.ReactNode; delay?: string; classN
         transform: `perspective(800px) rotateX(${tilt.x}deg) rotateY(${tilt.y}deg)`,
         transition: tilt.x === 0 ? 'transform 0.5s ease' : 'transform 0.1s ease',
         animationDelay: delay,
+        ...style,
       }}
       className={className}
     >
@@ -181,6 +303,7 @@ const FloatingCard: React.FC<{ children: React.ReactNode; delay?: string; classN
 export const LandingPage: React.FC = () => {
   const navigate = useNavigate();
   const { dark, toggle } = useDarkMode();
+  const typingWord = useTypingEffect();
 
   const heroRef     = useReveal();
   const statsRef    = useReveal();
@@ -239,35 +362,76 @@ export const LandingPage: React.FC = () => {
       </nav>
 
       {/* ── Hero ───────────────────────────────────────────────────────────── */}
-      <section className={`relative pt-28 pb-24 px-6 overflow-hidden ${
+      <section className={`relative pt-28 pb-32 px-6 overflow-hidden min-h-[92vh] flex flex-col justify-center ${
         dark ? 'bg-[#020617]' : 'bg-gradient-to-b from-slate-50 to-white'
       }`}>
+        {/* Particle field */}
+        <ParticleField dark={dark} />
+
         {/* Background grid */}
-        <div className={`absolute inset-0 grid-pattern ${dark ? 'opacity-30' : 'opacity-40'}`} />
+        <div className={`absolute inset-0 grid-pattern ${dark ? 'opacity-25' : 'opacity-30'}`} />
+
+        {/* Large glow rings */}
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[700px] rounded-full border border-indigo-500/10 animate-spin-slow pointer-events-none" />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] rounded-full border border-violet-500/10 animate-spin-slow pointer-events-none" style={{ animationDirection: 'reverse', animationDuration: '25s' }} />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] h-[300px] rounded-full border border-cyan-500/10 animate-spin-slow pointer-events-none" />
 
         {/* Orbs */}
-        <div className="orb w-96 h-96 bg-indigo-600/30 -top-20 -left-20 animate-float" />
-        <div className="orb w-80 h-80 bg-violet-600/20 top-10 right-0 animate-float-slow" />
-        <div className="orb w-64 h-64 bg-cyan-500/15 bottom-0 left-1/3 animate-float-slower" />
+        <div className="orb w-[500px] h-[500px] bg-indigo-600/25 -top-32 -left-32 animate-float" />
+        <div className="orb w-96 h-96 bg-violet-600/20 top-10 -right-20 animate-float-slow" />
+        <div className="orb w-72 h-72 bg-cyan-500/15 bottom-10 left-1/4 animate-float-slower" />
+        <div className="orb w-48 h-48 bg-rose-500/10 bottom-20 right-1/4 animate-float" />
 
-        <div ref={heroRef} className="reveal relative max-w-4xl mx-auto text-center">
+        {/* Laser beams */}
+        <div className="absolute inset-0 pointer-events-none overflow-hidden">
+          <div className="absolute top-0 left-1/3 w-px h-full bg-gradient-to-b from-transparent via-indigo-500/20 to-transparent animate-pulse-slow" />
+          <div className="absolute top-0 left-2/3 w-px h-full bg-gradient-to-b from-transparent via-violet-500/15 to-transparent animate-pulse-slow" style={{ animationDelay: '1s' }} />
+          <div className="absolute top-1/3 left-0 w-full h-px bg-gradient-to-r from-transparent via-cyan-500/10 to-transparent animate-pulse-slow" style={{ animationDelay: '2s' }} />
+        </div>
+
+        <div ref={heroRef} className="reveal relative max-w-5xl mx-auto text-center z-10">
+
           {/* Badge */}
-          <div className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-semibold mb-8 neon-border ${
-            dark ? 'bg-indigo-950/60 text-indigo-300' : 'bg-indigo-50 text-indigo-700'
+          <div className={`inline-flex items-center gap-2.5 px-5 py-2 rounded-full text-xs font-semibold mb-10 animate-fade-up ${
+            dark
+              ? 'bg-indigo-950/80 text-indigo-300 border border-indigo-700/50 shadow-lg shadow-indigo-500/20'
+              : 'bg-indigo-50 text-indigo-700 border border-indigo-200'
           }`}>
-            <span className="w-1.5 h-1.5 rounded-full bg-indigo-400 animate-pulse" />
-            Powered by Advanced AI
+            <span className="flex gap-0.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-indigo-400 animate-bounce" style={{ animationDelay: '0ms' }} />
+              <span className="w-1.5 h-1.5 rounded-full bg-violet-400 animate-bounce" style={{ animationDelay: '150ms' }} />
+              <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-bounce" style={{ animationDelay: '300ms' }} />
+            </span>
+            Powered by Advanced AI · Live in seconds
           </div>
 
-          {/* Headline */}
-          <h1 className="text-5xl sm:text-7xl font-black tracking-tight leading-[1.05] mb-6">
-            Turn meetings into{' '}
-            <span className="gradient-text text-glow">
-              execution
+          {/* Headline with typing effect */}
+          <h1 className="text-5xl sm:text-7xl lg:text-8xl font-black tracking-tight leading-[1.05] mb-8 animate-fade-up delay-100">
+            <span className={dark ? 'text-white' : 'text-slate-900'}>
+              Turn meetings into
+            </span>
+            <br />
+            {/* Typing word with cursor and glow */}
+            <span className="relative inline-block">
+              <span
+                className="gradient-text text-glow"
+                style={{
+                  textShadow: dark
+                    ? '0 0 60px rgba(99,102,241,0.8), 0 0 120px rgba(139,92,246,0.4)'
+                    : '0 0 40px rgba(99,102,241,0.4)',
+                }}
+              >
+                {typingWord}
+              </span>
+              {/* Blinking cursor */}
+              <span
+                className="inline-block w-1 ml-1 rounded-full bg-indigo-400 animate-pulse"
+                style={{ height: '0.85em', verticalAlign: 'baseline', marginBottom: '-0.05em' }}
+              />
             </span>
           </h1>
 
-          <p className={`text-lg sm:text-xl max-w-2xl mx-auto mb-10 leading-relaxed ${
+          <p className={`text-lg sm:text-xl max-w-2xl mx-auto mb-12 leading-relaxed animate-fade-up delay-200 ${
             dark ? 'text-slate-400' : 'text-slate-500'
           }`}>
             AI extracts every action item, decision, and follow-up from your transcript.
@@ -275,14 +439,22 @@ export const LandingPage: React.FC = () => {
           </p>
 
           {/* CTA buttons */}
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-16">
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-20 animate-fade-up delay-300">
             <button
               onClick={() => navigate('/meetings')}
-              className="group inline-flex items-center gap-2.5 px-8 py-4 rounded-2xl bg-gradient-to-r from-indigo-600 to-indigo-500 hover:from-indigo-500 hover:to-indigo-400 text-white font-bold text-base shadow-2xl shadow-indigo-500/40 transition-all hover:scale-105 hover:shadow-indigo-500/60"
+              className="group relative inline-flex items-center gap-2.5 px-8 py-4 rounded-2xl font-bold text-base text-white transition-all hover:scale-105 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 overflow-hidden"
+              style={{
+                background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #6366f1 100%)',
+                backgroundSize: '200% auto',
+                animation: 'gradientShift 3s ease infinite',
+                boxShadow: '0 0 30px rgba(99,102,241,0.5), 0 0 60px rgba(99,102,241,0.25), 0 20px 40px rgba(99,102,241,0.3)',
+              }}
             >
-              <Sparkles className="w-5 h-5" />
-              Get Started Free
-              <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+              {/* Shimmer overlay */}
+              <span className="absolute inset-0 shimmer opacity-30" />
+              <Sparkles className="w-5 h-5 relative z-10" />
+              <span className="relative z-10">Get Started Free</span>
+              <ArrowRight className="w-4 h-4 relative z-10 group-hover:translate-x-1 transition-transform" />
             </button>
             <a
               href="http://localhost:8000/docs"
@@ -290,8 +462,8 @@ export const LandingPage: React.FC = () => {
               rel="noopener noreferrer"
               className={`inline-flex items-center gap-2 px-8 py-4 rounded-2xl font-semibold text-base transition-all hover:scale-105 border ${
                 dark
-                  ? 'border-slate-700 bg-slate-900/60 text-slate-300 hover:border-slate-500 hover:text-white'
-                  : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50'
+                  ? 'border-slate-700 bg-slate-900/60 text-slate-300 hover:border-indigo-500/50 hover:text-white hover:shadow-lg hover:shadow-indigo-500/10'
+                  : 'border-slate-200 bg-white text-slate-700 hover:border-indigo-200 hover:shadow-lg hover:shadow-indigo-50'
               }`}
             >
               <Play className="w-4 h-4" />
@@ -300,48 +472,68 @@ export const LandingPage: React.FC = () => {
           </div>
 
           {/* Floating preview cards */}
-          <div className="relative flex justify-center gap-4 flex-wrap">
+          <div className="relative flex justify-center gap-5 flex-wrap animate-fade-up delay-400">
             {[
-              { status: 'APPROVED', type: 'ACTION_ITEM', title: 'Deploy API gateway', owner: 'James', deadline: 'Nov 7', conf: 97, color: 'emerald' },
-              { status: 'NEEDS CLARIFICATION', type: 'ACTION_ITEM', title: 'Update onboarding flow', owner: '—', deadline: '—', conf: 78, color: 'amber' },
-              { status: 'READY FOR REVIEW', type: 'DECISION', title: 'CSV export confirmed for Q3', owner: '—', deadline: '—', conf: 99, color: 'blue' },
+              { status: 'APPROVED', title: 'Deploy API gateway', owner: 'James', deadline: 'Nov 7', conf: 97, color: 'emerald' },
+              { status: 'NEEDS CLARIFICATION', title: 'Update onboarding flow', owner: '—', deadline: '—', conf: 78, color: 'amber' },
+              { status: 'READY FOR REVIEW', title: 'CSV export confirmed for Q3', owner: '—', deadline: '—', conf: 99, color: 'blue' },
             ].map((card, i) => (
               <FloatingCard
                 key={card.title}
-                delay={`${i * 150}ms`}
-                className={`w-60 p-4 rounded-2xl text-left animate-fade-up opacity-0 neon-border ${
-                  dark ? 'bg-slate-900/80' : 'bg-white shadow-xl shadow-slate-200'
+                delay={`${i * 200}ms`}
+                className={`w-64 p-4 rounded-2xl text-left ${
+                  dark
+                    ? 'bg-slate-900/90 border border-slate-700/60 shadow-2xl'
+                    : 'bg-white shadow-2xl shadow-slate-200 border border-slate-100'
                 }`}
+                style={{
+                  boxShadow: dark
+                    ? `0 0 30px ${card.color === 'emerald' ? 'rgba(16,185,129,0.15)' : card.color === 'amber' ? 'rgba(245,158,11,0.15)' : 'rgba(59,130,246,0.15)'}, 0 20px 40px rgba(0,0,0,0.4)`
+                    : undefined,
+                }}
               >
-                <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center justify-between mb-3">
                   <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                    card.color === 'emerald' ? 'bg-emerald-500/20 text-emerald-400' :
-                    card.color === 'amber'   ? 'bg-amber-500/20 text-amber-400' :
-                                               'bg-blue-500/20 text-blue-400'
+                    card.color === 'emerald' ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/20' :
+                    card.color === 'amber'   ? 'bg-amber-500/20 text-amber-400 border border-amber-500/20' :
+                                               'bg-blue-500/20 text-blue-400 border border-blue-500/20'
                   }`}>{card.status}</span>
-                  <span className={`text-[10px] font-semibold ${dark ? 'text-slate-500' : 'text-slate-400'}`}>
-                    {card.conf}% conf
-                  </span>
+                  <span className={`text-[10px] font-bold ${
+                    card.color === 'emerald' ? 'text-emerald-400' :
+                    card.color === 'amber'   ? 'text-amber-400' : 'text-blue-400'
+                  }`}>{card.conf}%</span>
                 </div>
-                <p className={`text-xs font-semibold mb-2 line-clamp-2 ${dark ? 'text-slate-200' : 'text-slate-800'}`}>
+                <p className={`text-xs font-semibold mb-3 line-clamp-2 ${dark ? 'text-slate-200' : 'text-slate-800'}`}>
                   {card.title}
                 </p>
-                <div className={`flex items-center justify-between text-[10px] ${dark ? 'text-slate-500' : 'text-slate-400'}`}>
+                <div className={`flex items-center justify-between text-[10px] mb-2 ${dark ? 'text-slate-500' : 'text-slate-400'}`}>
                   <span>{card.owner}</span>
                   <span>{card.deadline}</span>
                 </div>
-                {/* Confidence bar */}
-                <div className={`mt-2 h-1 rounded-full overflow-hidden ${dark ? 'bg-slate-800' : 'bg-slate-100'}`}>
+                <div className={`h-1.5 rounded-full overflow-hidden ${dark ? 'bg-slate-800' : 'bg-slate-100'}`}>
                   <div
-                    className={`h-full rounded-full transition-all ${
-                      card.color === 'emerald' ? 'bg-emerald-500' :
-                      card.color === 'amber'   ? 'bg-amber-500' : 'bg-blue-500'
+                    className={`h-full rounded-full ${
+                      card.color === 'emerald' ? 'bg-gradient-to-r from-emerald-500 to-emerald-400' :
+                      card.color === 'amber'   ? 'bg-gradient-to-r from-amber-500 to-amber-400' :
+                                                 'bg-gradient-to-r from-blue-500 to-blue-400'
                     }`}
-                    style={{ width: `${card.conf}%` }}
+                    style={{ width: `${card.conf}%`, boxShadow: `0 0 8px ${card.color === 'emerald' ? '#10b981' : card.color === 'amber' ? '#f59e0b' : '#3b82f6'}` }}
                   />
                 </div>
               </FloatingCard>
             ))}
+          </div>
+
+          {/* Trusted by line */}
+          <div className={`mt-14 flex items-center justify-center gap-2 text-xs animate-fade-up delay-500 ${dark ? 'text-slate-600' : 'text-slate-400'}`}>
+            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
+            139 tests passing
+            <span className="mx-2 opacity-30">·</span>
+            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
+            Trello + GitHub + Slack
+            <span className="mx-2 opacity-30">·</span>
+            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
+            Built for HackNova '26
           </div>
         </div>
       </section>
