@@ -6,7 +6,15 @@ import { StatusBadge } from '../common/StatusBadge';
 import { TypeBadge } from '../common/TypeBadge';
 
 interface OverdueListProps {
-  items: Item[];
+  items: (Partial<Item> & {
+    id: string;
+    title: string;
+    owner?: string | null;
+    deadline?: string | null;
+    status?: any;
+    type?: any;
+    meeting_id?: string;
+  })[];
 }
 
 export const OverdueList: React.FC<OverdueListProps> = ({ items }) => {
@@ -33,7 +41,7 @@ export const OverdueList: React.FC<OverdueListProps> = ({ items }) => {
                 <Clock className="w-3 h-3" />
                 OVERDUE
               </span>
-              <TypeBadge type={item.type} />
+              {item.type && <TypeBadge type={item.type} />}
               <StatusBadge status={item.status} size="sm" />
             </div>
 
@@ -55,10 +63,10 @@ export const OverdueList: React.FC<OverdueListProps> = ({ items }) => {
 
           <div className="flex-shrink-0">
             <Link
-              to={`/meetings/${item.meeting_id}`}
+              to={item.meeting_id ? `/meetings/${item.meeting_id}` : '/'}
               className="inline-flex items-center gap-1 text-xs font-semibold text-indigo-600 hover:text-indigo-800 bg-white border border-slate-200 px-3 py-1.5 rounded-lg shadow-2xs hover:shadow-xs transition-all"
             >
-              <span>View Meeting</span>
+              <span>{item.meeting_id ? 'View Meeting' : 'View Meetings'}</span>
               <ArrowRight className="w-3 h-3" />
             </Link>
           </div>

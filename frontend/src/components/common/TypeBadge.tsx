@@ -3,7 +3,7 @@ import { ItemType } from '../../types/api';
 import { CheckSquare, GitFork, Lightbulb, HelpCircle, ArrowRightCircle } from 'lucide-react';
 
 interface TypeBadgeProps {
-  type: ItemType | string;
+  type?: ItemType | string | null;
 }
 
 const typeConfig: Record<string, { label: string; icon: React.ElementType; bg: string; text: string; border: string }> = {
@@ -45,8 +45,12 @@ const typeConfig: Record<string, { label: string; icon: React.ElementType; bg: s
 };
 
 export const TypeBadge: React.FC<TypeBadgeProps> = ({ type }) => {
+  if (!type) {
+    return null;
+  }
+
   const config = typeConfig[type] || {
-    label: type.replace(/_/g, ' '),
+    label: String(type).replace(/_/g, ' '),
     icon: CheckSquare,
     bg: 'bg-slate-50',
     text: 'text-slate-700',

@@ -2,7 +2,7 @@ import React from 'react';
 import { ItemStatus, MeetingStatus } from '../../types/api';
 
 interface StatusBadgeProps {
-  status: ItemStatus | MeetingStatus | string;
+  status?: ItemStatus | MeetingStatus | string | null;
   size?: 'sm' | 'md' | 'lg';
 }
 
@@ -82,8 +82,9 @@ const statusConfig: Record<string, { label: string; bg: string; text: string; bo
 };
 
 export const StatusBadge: React.FC<StatusBadgeProps> = ({ status, size = 'md' }) => {
-  const config = statusConfig[status] || {
-    label: status.replace(/_/g, ' '),
+  const safeStatus = status || 'EXTRACTED';
+  const config = statusConfig[safeStatus] || {
+    label: String(safeStatus).replace(/_/g, ' '),
     bg: 'bg-slate-100',
     text: 'text-slate-700',
     border: 'border-slate-200',
