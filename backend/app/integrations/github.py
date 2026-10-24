@@ -148,11 +148,10 @@ class GitHubClient:
             "labels": labels,
         }
 
-        # Add assignee if owner matches a GitHub username
-        # Note: GitHub assignees must be collaborators on the repo
-        # We try to add the owner — if it fails GitHub silently ignores unknown assignees
-        if item.owner:
-            payload["assignees"] = [item.owner.replace(" ", "").lower()]
+        # Do NOT send assignees — GitHub only allows repo collaborators as assignees.
+        # Owner name is already in the issue body for visibility.
+        # if item.owner:
+        #     payload["assignees"] = [item.owner.replace(" ", "").lower()]
 
         try:
             resp = httpx.post(
