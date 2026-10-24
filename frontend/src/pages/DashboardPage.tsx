@@ -24,26 +24,32 @@ const StatCard: React.FC<{
   sublabel?: string;
   dark: boolean;
 }> = ({ label, value, icon: Icon, gradient, glow, sublabel, dark }) => (
-  <div className={`relative overflow-hidden rounded-2xl p-5 transition-all hover:scale-[1.02] hover:shadow-xl ${
-    dark ? 'bg-slate-900 border border-slate-700' : 'bg-white border border-slate-300 shadow-md'
+  <div className={`group relative overflow-hidden rounded-2xl p-6 transition-all duration-300 hover:scale-105 ${
+    dark ? 'bg-gradient-to-br from-slate-900 to-slate-800 border border-slate-700 shadow-2xl' : 'bg-gradient-to-br from-white to-slate-50 border-2 border-slate-200 shadow-2xl hover:shadow-indigo-100'
   } ${glow}`}>
-    {/* Gradient accent top-left */}
-    <div className={`absolute -top-6 -left-6 w-24 h-24 rounded-full opacity-10 ${gradient}`} />
-    <div className="relative">
-      <div className="flex items-start justify-between mb-3">
-        <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${gradient} shadow-lg`}>
-          <Icon className="w-5 h-5 text-white" />
+    {/* Animated gradient overlay */}
+    <div className={`absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 bg-gradient-to-br ${gradient} blur-2xl`} style={{ transform: 'scale(1.5)' }} />
+    
+    {/* Gradient accent stripe */}
+    <div className={`absolute top-0 left-0 right-0 h-1 ${gradient}`} />
+    
+    <div className="relative z-10">
+      <div className="flex items-start justify-between mb-4">
+        <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${gradient} shadow-xl group-hover:scale-110 transition-transform duration-300`}>
+          <Icon className="w-6 h-6 text-white" />
         </div>
-        <TrendingUp className={`w-4 h-4 ${dark ? 'text-slate-700' : 'text-slate-300'}`} />
+        <div className={`px-2 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider ${
+          dark ? 'bg-slate-800 text-slate-400' : 'bg-slate-100 text-slate-500'
+        }`}>Live</div>
       </div>
-      <div className={`text-3xl font-black tracking-tight mb-1 ${dark ? 'text-white' : 'text-slate-900'}`}>
+      <div className={`text-4xl font-black tracking-tight mb-2 bg-gradient-to-r ${gradient} bg-clip-text text-transparent`}>
         {value}
       </div>
-      <div className={`text-xs font-semibold uppercase tracking-wider ${dark ? 'text-slate-400' : 'text-slate-500'}`}>
+      <div className={`text-xs font-bold uppercase tracking-wider mb-1 ${dark ? 'text-slate-300' : 'text-slate-700'}`}>
         {label}
       </div>
       {sublabel && (
-        <div className={`text-[10px] mt-0.5 ${dark ? 'text-slate-600' : 'text-slate-400'}`}>{sublabel}</div>
+        <div className={`text-[11px] ${dark ? 'text-slate-500' : 'text-slate-400'}`}>{sublabel}</div>
       )}
     </div>
   </div>
@@ -53,11 +59,11 @@ const StatCard: React.FC<{
 const MiniStat: React.FC<{
   label: string; value: number; color: string; dark: boolean;
 }> = ({ label, value, color, dark }) => (
-  <div className={`p-4 rounded-xl border text-center transition-all hover:scale-[1.02] ${
-    dark ? 'bg-slate-900 border-slate-700' : 'bg-white border-slate-300 shadow-md'
+  <div className={`group p-5 rounded-xl border-2 text-center transition-all duration-300 hover:scale-105 hover:-translate-y-1 ${
+    dark ? 'bg-slate-900 border-slate-700 shadow-xl hover:shadow-2xl' : 'bg-white border-slate-200 shadow-lg hover:shadow-xl'
   }`}>
-    <div className={`text-2xl font-black mb-1 ${color}`}>{value}</div>
-    <div className={`text-[11px] font-medium ${dark ? 'text-slate-500' : 'text-slate-400'}`}>{label}</div>
+    <div className={`text-3xl font-black mb-2 ${color} group-hover:scale-110 transition-transform duration-300`}>{value}</div>
+    <div className={`text-[11px] font-bold uppercase tracking-wider ${dark ? 'text-slate-400' : 'text-slate-500'}`}>{label}</div>
   </div>
 );
 
@@ -115,24 +121,28 @@ export const DashboardPage: React.FC = () => {
   const counts: Record<string, number> = (dashboard.status_counts as Record<string, number>) || dashboard.counts || {};
   const awaiting = dashboard.awaiting_clarification || counts.NEEDS_CLARIFICATION || 0;
 
-  const cardBg     = dark ? 'bg-slate-900 border-slate-700' : 'bg-white border-slate-300 shadow-sm';
+  const cardBg     = dark ? 'bg-slate-900 border-slate-700' : 'bg-white border-slate-200 shadow-lg';
   const textMain   = dark ? 'text-slate-100' : 'text-slate-900';
   const textSub    = dark ? 'text-slate-400' : 'text-slate-500';
   const divider    = dark ? 'border-slate-800' : 'border-slate-100';
   const itemHover  = dark ? 'hover:bg-slate-800/50' : 'hover:bg-slate-50';
 
   return (
-    <div className="space-y-6">
+    <div className={`space-y-6 ${dark ? 'bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950' : 'bg-gradient-to-br from-slate-50 via-white to-indigo-50/30'} min-h-screen -m-6 md:-m-8 p-6 md:p-8`}>
 
       {/* ── Header ── */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <div className="flex items-center gap-2 mb-1">
-            <Sparkles className="w-5 h-5 text-indigo-500" />
-            <h1 className={`text-2xl font-bold tracking-tight ${textMain}`}>Dashboard</h1>
+          <div className="flex items-center gap-3 mb-2">
+            <div className={`w-12 h-12 rounded-xl flex items-center justify-center bg-gradient-to-br from-indigo-600 to-violet-600 shadow-lg ${
+              dark ? 'shadow-indigo-500/20' : 'shadow-indigo-500/30'
+            }`}>
+              <Sparkles className="w-6 h-6 text-white" />
+            </div>
+            <h1 className={`text-3xl font-black tracking-tight ${textMain}`}>Dashboard</h1>
           </div>
-          <p className={`text-sm ${textSub}`}>
-            Global overview of tasks, overdue work, and board synchronization.
+          <p className={`text-sm ${textSub} ml-15`}>
+            Real-time overview of tasks, overdue work, and board synchronization.
           </p>
         </div>
         <div className="flex items-center gap-2.5">
@@ -193,7 +203,9 @@ export const DashboardPage: React.FC = () => {
       </div>
 
       {/* ── Overdue ── */}
-      <div className={`rounded-2xl border p-5 space-y-4 ${cardBg}`}>
+      <div className={`rounded-2xl border-2 p-6 space-y-4 backdrop-blur-sm ${
+        dark ? 'bg-slate-900/80 border-slate-700 shadow-2xl' : 'bg-white/80 border-slate-200 shadow-2xl'
+      }`}>
         <SectionHeader dark={dark} icon={Clock} title="Overdue Commitments"
           count={dashboard.overdue.length} badge="Past deadline" iconColor="text-rose-500" />
         {dashboard.overdue.length === 0 ? (
@@ -210,7 +222,9 @@ export const DashboardPage: React.FC = () => {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
 
         {/* Unassigned */}
-        <div className={`rounded-2xl border p-5 space-y-4 ${cardBg}`}>
+        <div className={`rounded-2xl border-2 p-6 space-y-4 backdrop-blur-sm ${
+          dark ? 'bg-slate-900/80 border-slate-700 shadow-2xl' : 'bg-white/80 border-slate-200 shadow-2xl'
+        }`}>
           <SectionHeader dark={dark} icon={UserX} title="Unassigned Items"
             count={dashboard.unassigned.length} badge="Needs owner" iconColor="text-amber-500" />
           {dashboard.unassigned.length === 0 ? (
@@ -243,7 +257,9 @@ export const DashboardPage: React.FC = () => {
         </div>
 
         {/* Pending from previous meetings */}
-        <div className={`rounded-2xl border p-5 space-y-4 ${cardBg}`}>
+        <div className={`rounded-2xl border-2 p-6 space-y-4 backdrop-blur-sm ${
+          dark ? 'bg-slate-900/80 border-slate-700 shadow-2xl' : 'bg-white/80 border-slate-200 shadow-2xl'
+        }`}>
           <SectionHeader dark={dark} icon={Calendar} title="Pending from Meetings"
             count={dashboard.pending?.length || 0} badge="Carry-over" iconColor="text-indigo-500" />
           {(!dashboard.pending || dashboard.pending.length === 0) ? (
