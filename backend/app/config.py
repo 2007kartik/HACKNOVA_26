@@ -18,6 +18,8 @@ class Settings(BaseSettings):
     USE_MOCK_AI: bool = True
     GEMINI_API_KEY_1: str = ""
     GEMINI_API_KEY_2: str = ""
+    GEMINI_API_KEY_3: str = ""
+    GEMINI_API_KEY_4: str = ""
     GEMINI_MODEL: str = "gemini-2.5-flash"
 
     # ── Trello ────────────────────────────────────────────────────────────────

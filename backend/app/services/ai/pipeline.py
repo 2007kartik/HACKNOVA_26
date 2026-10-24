@@ -71,7 +71,12 @@ def _run_gemini_with_fallback(
     from google.api_core.exceptions import GoogleAPIError
 
     keys = [
-        k for k in [settings.GEMINI_API_KEY_1, settings.GEMINI_API_KEY_2]
+        k for k in [
+            settings.GEMINI_API_KEY_1,
+            settings.GEMINI_API_KEY_2,
+            settings.GEMINI_API_KEY_3,
+            settings.GEMINI_API_KEY_4,
+        ]
         if k and k.strip()
     ]
 
