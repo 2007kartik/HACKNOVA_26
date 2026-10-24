@@ -1,16 +1,9 @@
 import React, { useState } from 'react';
-import { 
-  X, 
-  Eye, 
-  Send, 
-  ExternalLink, 
-  CheckCircle2, 
-  AlertCircle, 
-  AlertTriangle,
-  Trello,
-  ShieldAlert
+import {
+  X, Eye, Send, ExternalLink, CheckCircle2,
+  AlertCircle, AlertTriangle, ShieldAlert, GitBranch,
 } from 'lucide-react';
-import { PushResponse, PushPreviewCard } from '../../types/api';
+import { PushResponse } from '../../types/api';
 import { meetingsApi } from '../../api/meetings';
 import { useToast } from '../common/Toast';
 
@@ -22,6 +15,47 @@ interface PushPreviewModalProps {
   onSuccess: () => void;
 }
 
+type Target = 'trello' | 'github';
+
+const TARGET_CONFIG: Record<Target, {
+  label: string;
+  color: string;
+  activeBg: string;
+  activeTxt: string;
+  btnBg: string;
+  icon: React.ReactNode;
+  confirmMsg: string;
+  pushingMsg: string;
+  successMsg: string;
+}> = {
+  trello: {
+    label: 'Trello',
+    color: 'blue',
+    activeBg: 'bg-blue-600',
+    activeTxt: 'text-white',
+    btnBg: 'bg-blue-600 hover:bg-blue-700',
+    icon: (
+      <svg viewBox="0 0 24 24" className="w-4 h-4 fill-current">
+        <path d="M21 0H3C1.3 0 0 1.3 0 3v18c0 1.7 1.3 3 3 3h18c1.7 0 3-1.3 3-3V3c0-1.7-1.3-3-3-3zM10.4 17.5c0 .8-.6 1.4-1.4 1.4H4.6c-.8 0-1.4-.6-1.4-1.4V6.5c0-.8.6-1.4 1.4-1.4H9c.8 0 1.4.6 1.4 1.4v11zm10.4-5.6c0 .8-.6 1.4-1.4 1.4H15c-.8 0-1.4-.6-1.4-1.4V6.5c0-.8.6-1.4 1.4-1.4h4.4c.8 0 1.4.6 1.4 1.4v5.4z"/>
+      </svg>
+    ),
+    confirmMsg: 'This will create real Trello cards. Cannot be undone.',
+    pushingMsg: 'Creating Trello Cards...',
+    successMsg: 'Trello cards created',
+  },
+  github: {
+    label: 'GitHub Issues',
+    color: 'slate',
+    activeBg: 'bg-slate-800',
+    activeTxt: 'text-white',
+    btnBg: 'bg-slate-800 hover:bg-slate-700',
+    icon: <GitBranch className="w-4 h-4" />,
+    confirmMsg: 'This will create real GitHub Issues with labels. Cannot be undone.',
+    pushingMsg: 'Creating GitHub Issues...',
+    successMsg: 'GitHub issues created',
+  },
+};
+
 export const PushPreviewModal: React.FC<PushPreviewModalProps> = ({
   isOpen,
   meetingId,
@@ -30,6 +64,7 @@ export const PushPreviewModal: React.FC<PushPreviewModalProps> = ({
   onSuccess,
 }) => {
   const { success, error: showError } = useToast();
+  const [target, setTarget] = useState<Target>('trello');
   const [isPreviewLoading, setIsPreviewLoading] = useState(false);
   const [isPushLoading, setIsPushLoading] = useState(false);
   const [previewResult, setPreviewResult] = useState<PushResponse | null>(null);
@@ -39,46 +74,55 @@ export const PushPreviewModal: React.FC<PushPreviewModalProps> = ({
 
   if (!isOpen) return null;
 
-  // Run Dry-run Preview
+  const cfg = TARGET_CONFIG[target];
+
+  const resetState = () => {
+    setPreviewResult(null);
+    setExecutionResult(null);
+    setConfirmStepOpen(false);
+    setErrorMessage(null);
+  };
+
+  const handleTargetChange = (t: Target) => {
+    setTarget(t);
+    resetState();
+  };
+
   const handleRunPreview = async () => {
     try {
       setIsPreviewLoading(true);
       setErrorMessage(null);
       setExecutionResult(null);
-      const res = await meetingsApi.previewPush(meetingId, 'trello');
+      const res = await meetingsApi.previewPush(meetingId, target);
       setPreviewResult(res);
-      success('Dry-run preview generated successfully');
+      success(`Dry-run preview generated for ${cfg.label}`);
     } catch (err: any) {
-      setErrorMessage(err.message || 'Failed to generate dry-run preview. Please check backend integration settings.');
+      setErrorMessage(err.message || `Failed to generate preview for ${cfg.label}.`);
       showError(err.message || 'Dry-run preview failed.');
     } finally {
       setIsPreviewLoading(false);
     }
   };
 
-  // Run Real Push after explicit confirmation
   const handleExecutePush = async () => {
     try {
       setIsPushLoading(true);
       setErrorMessage(null);
-      const res = await meetingsApi.executePush(meetingId, 'trello');
+      const res = await meetingsApi.executePush(meetingId, target);
       setExecutionResult(res);
       setConfirmStepOpen(false);
-      success(`Push complete: ${res.pushed?.length || 0} cards pushed, ${res.failed?.length || 0} failed.`);
+      success(`${cfg.successMsg}: ${res.pushed?.length || 0} pushed, ${res.failed?.length || 0} failed.`);
       onSuccess();
     } catch (err: any) {
-      setErrorMessage(err.message || 'External push failed.');
-      showError(err.message || 'External push failed.');
+      setErrorMessage(err.message || `Push to ${cfg.label} failed.`);
+      showError(err.message || 'Push failed.');
     } finally {
       setIsPushLoading(false);
     }
   };
 
   const handleClose = () => {
-    setPreviewResult(null);
-    setExecutionResult(null);
-    setConfirmStepOpen(false);
-    setErrorMessage(null);
+    resetState();
     onClose();
   };
 
@@ -92,20 +136,16 @@ export const PushPreviewModal: React.FC<PushPreviewModalProps> = ({
       aria-labelledby="push-modal-title"
     >
       <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full overflow-hidden border border-slate-200">
-        {/* Header */}
+
+        {/* ── Header ── */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-slate-50/60">
-          <div className="flex items-center gap-2.5">
-            <div className="p-2 rounded-xl bg-blue-100 text-blue-700">
-              <Trello className="w-5 h-5" />
-            </div>
-            <div>
-              <h3 id="push-modal-title" className="text-base font-semibold text-slate-900">
-                Push to Trello Task Board
-              </h3>
-              <p className="text-xs text-slate-500">
-                Mandatory dry-run preview before creating any live external cards.
-              </p>
-            </div>
+          <div>
+            <h3 id="push-modal-title" className="text-base font-semibold text-slate-900">
+              Push Approved Tasks
+            </h3>
+            <p className="text-xs text-slate-500">
+              Dry-run preview is mandatory before any live push.
+            </p>
           </div>
           <button
             onClick={handleClose}
@@ -118,6 +158,31 @@ export const PushPreviewModal: React.FC<PushPreviewModalProps> = ({
         </div>
 
         <div className="p-6 space-y-5">
+
+          {/* ── Target selector ── */}
+          <div className="flex gap-2 p-1 bg-slate-100 rounded-xl">
+            {(Object.keys(TARGET_CONFIG) as Target[]).map((t) => {
+              const c = TARGET_CONFIG[t];
+              const isActive = target === t;
+              return (
+                <button
+                  key={t}
+                  onClick={() => handleTargetChange(t)}
+                  disabled={isPreviewLoading || isPushLoading}
+                  className={`flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-lg text-sm font-semibold transition-all ${
+                    isActive
+                      ? `${c.activeBg} ${c.activeTxt} shadow-sm`
+                      : 'text-slate-500 hover:text-slate-700 hover:bg-white/60'
+                  }`}
+                >
+                  {c.icon}
+                  {c.label}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* ── Error ── */}
           {errorMessage && (
             <div className="p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs flex items-start gap-2.5">
               <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5 text-rose-600" />
@@ -128,54 +193,48 @@ export const PushPreviewModal: React.FC<PushPreviewModalProps> = ({
             </div>
           )}
 
-          {/* Initial State: Preview Not Yet Run */}
+          {/* ── Initial: no preview yet ── */}
           {!previewResult && !executionResult && (
             <div className="text-center py-8 px-4 bg-slate-50 rounded-xl border border-slate-200">
               <Eye className="w-10 h-10 text-indigo-500 mx-auto mb-2.5" />
               <h4 className="text-sm font-semibold text-slate-800">Dry-Run Preview Required</h4>
               <p className="text-xs text-slate-500 mt-1 max-w-md mx-auto">
-                Safety check: The system will simulate card creation without modifying your Trello boards. Review which approved items are eligible and check for any integration issues.
+                Simulate {cfg.label === 'Trello' ? 'card' : 'issue'} creation for all approved items
+                without making any real changes.
               </p>
               <button
                 type="button"
                 onClick={handleRunPreview}
                 disabled={isPreviewLoading}
-                className="mt-5 inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold shadow-xs transition-colors disabled:opacity-50"
+                className={`mt-5 inline-flex items-center gap-2 px-4 py-2 rounded-lg ${cfg.btnBg} text-white text-xs font-semibold shadow-xs transition-colors disabled:opacity-50`}
               >
-                {isPreviewLoading ? (
-                  <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                ) : (
-                  <Eye className="w-4 h-4" />
-                )}
-                <span>{isPreviewLoading ? 'Simulating Dry-Run...' : 'Generate Preview'}</span>
+                {isPreviewLoading
+                  ? <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  : <Eye className="w-4 h-4" />}
+                {isPreviewLoading ? 'Simulating...' : 'Generate Preview'}
               </button>
             </div>
           )}
 
-          {/* Step 2: Preview Results Display */}
+          {/* ── Preview results ── */}
           {previewResult && !executionResult && (
             <div className="space-y-4">
               <div className="p-3 rounded-xl bg-amber-50 border border-amber-200 text-xs text-amber-900 flex items-center gap-2">
                 <AlertTriangle className="w-4 h-4 text-amber-600 flex-shrink-0" />
                 <span className="font-semibold">
-                  Preview only — no Trello cards have been created yet.
+                  Preview only — no {cfg.label === 'Trello' ? 'cards' : 'issues'} have been created yet.
                 </span>
               </div>
 
-              {/* Eligible items list */}
               <div>
                 <div className="flex items-center justify-between text-xs font-semibold text-slate-700 mb-2">
                   <span>Eligible to Push ({previewResult.pushed?.length || 0})</span>
                   <span className="text-slate-400 font-normal">Approved items only</span>
                 </div>
-
                 {previewResult.pushed && previewResult.pushed.length > 0 ? (
                   <div className="max-h-48 overflow-y-auto space-y-2 pr-1">
                     {previewResult.pushed.map((card, idx) => (
-                      <div
-                        key={idx}
-                        className="p-3 rounded-lg border border-slate-200 bg-white text-xs space-y-1 shadow-2xs"
-                      >
+                      <div key={idx} className="p-3 rounded-lg border border-slate-200 bg-white text-xs space-y-1 shadow-xs">
                         <div className="font-semibold text-slate-900">{card.title}</div>
                         <div className="flex items-center gap-4 text-slate-500 text-[11px]">
                           <span>Owner: <strong className="text-slate-700">{card.owner || 'Unassigned'}</strong></span>
@@ -186,42 +245,20 @@ export const PushPreviewModal: React.FC<PushPreviewModalProps> = ({
                   </div>
                 ) : (
                   <div className="p-4 text-center rounded-lg border border-dashed border-slate-200 text-slate-400 text-xs">
-                    No approved action items are currently eligible to push. Please approve confirmed items first.
+                    No approved items to push. Approve some items first.
                   </div>
                 )}
               </div>
 
-              {/* Ineligible / Failed Preview items */}
-              {previewResult.failed && previewResult.failed.length > 0 && (
-                <div>
-                  <div className="text-xs font-semibold text-rose-700 mb-2">
-                    Skipped / Ineligible Items ({previewResult.failed.length})
-                  </div>
-                  <div className="max-h-36 overflow-y-auto space-y-1.5 pr-1">
-                    {previewResult.failed.map((card, idx) => (
-                      <div
-                        key={idx}
-                        className="p-2.5 rounded-lg border border-rose-200 bg-rose-50/50 text-xs space-y-0.5"
-                      >
-                        <div className="font-medium text-slate-800">{card.title}</div>
-                        <div className="text-rose-700 text-[11px]">
-                          Reason: {card.reason || 'Missing required fields or not in approved status.'}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Confirmation Step Warning */}
+              {/* Confirm step */}
               {confirmStepOpen ? (
                 <div className="p-4 rounded-xl bg-rose-50 border border-rose-200 text-xs space-y-3">
                   <div className="flex items-start gap-2.5">
                     <ShieldAlert className="w-5 h-5 text-rose-600 flex-shrink-0 mt-0.5" />
                     <div>
-                      <h4 className="font-bold text-rose-900">Confirm Live External Execution</h4>
+                      <h4 className="font-bold text-rose-900">Confirm Live Push</h4>
                       <p className="mt-0.5 text-rose-700 leading-relaxed">
-                        This action will immediately make real API calls to Trello to create <strong className="font-bold">{candidateCount} cards</strong>. This cannot be undone. Are you sure you want to proceed?
+                        {cfg.confirmMsg} Creating <strong>{candidateCount} {cfg.label === 'Trello' ? 'cards' : 'issues'}</strong>.
                       </p>
                     </div>
                   </div>
@@ -240,10 +277,8 @@ export const PushPreviewModal: React.FC<PushPreviewModalProps> = ({
                       disabled={isPushLoading}
                       className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-700 text-white font-semibold shadow-xs disabled:opacity-50"
                     >
-                      {isPushLoading && (
-                        <span className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                      )}
-                      <span>{isPushLoading ? 'Creating Trello Cards...' : 'Yes, Create Tasks Now'}</span>
+                      {isPushLoading && <span className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />}
+                      {isPushLoading ? cfg.pushingMsg : `Yes, Push Now`}
                     </button>
                   </div>
                 </div>
@@ -257,23 +292,18 @@ export const PushPreviewModal: React.FC<PushPreviewModalProps> = ({
                   >
                     Re-run Preview
                   </button>
-
                   <div className="flex items-center gap-2">
-                    <button
-                      type="button"
-                      onClick={handleClose}
-                      className="px-4 py-2 text-xs font-medium text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50"
-                    >
+                    <button type="button" onClick={handleClose} className="px-4 py-2 text-xs font-medium text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50">
                       Close
                     </button>
                     <button
                       type="button"
                       onClick={() => setConfirmStepOpen(true)}
                       disabled={candidateCount === 0 || isPushLoading}
-                      className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-xs transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      className={`inline-flex items-center gap-1.5 px-4 py-2 text-xs font-semibold text-white ${cfg.btnBg} rounded-lg shadow-xs transition-colors disabled:opacity-50 disabled:cursor-not-allowed`}
                     >
                       <Send className="w-3.5 h-3.5" />
-                      <span>Push {candidateCount} Tasks to Trello</span>
+                      Push {candidateCount} to {cfg.label}
                     </button>
                   </div>
                 </div>
@@ -281,48 +311,43 @@ export const PushPreviewModal: React.FC<PushPreviewModalProps> = ({
             </div>
           )}
 
-          {/* Step 3: Execution Final Results */}
+          {/* ── Execution results ── */}
           {executionResult && (
             <div className="space-y-4">
               <div className="p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 text-xs text-emerald-900 flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <CheckCircle2 className="w-5 h-5 text-emerald-600" />
-                  <span className="font-semibold">Push Execution Finished</span>
+                  <span className="font-semibold">Push to {cfg.label} Complete</span>
                 </div>
                 <span className="font-bold">
-                  {executionResult.pushed?.length || 0} Successful / {executionResult.failed?.length || 0} Failed
+                  {executionResult.pushed?.length || 0} Success / {executionResult.failed?.length || 0} Failed
                 </span>
               </div>
 
-              {/* Successfully pushed cards */}
               {executionResult.pushed && executionResult.pushed.length > 0 && (
                 <div>
                   <h4 className="text-xs font-semibold text-slate-700 uppercase tracking-wider mb-2">
-                    Created Cards ({executionResult.pushed.length})
+                    Created ({executionResult.pushed.length})
                   </h4>
                   <div className="max-h-48 overflow-y-auto space-y-2 pr-1">
                     {executionResult.pushed.map((card, idx) => {
-                      const cardUrl = card.card_url || card.url;
+                      const url = (card as any).trello_url || (card as any).card_url || (card as any).url;
                       return (
-                        <div
-                          key={idx}
-                          className="p-3 rounded-lg border border-emerald-200 bg-white text-xs flex items-center justify-between shadow-2xs"
-                        >
+                        <div key={idx} className="p-3 rounded-lg border border-emerald-200 bg-white text-xs flex items-center justify-between shadow-xs">
                           <div>
                             <div className="font-semibold text-slate-900">{card.title}</div>
                             <div className="text-[11px] text-slate-500">
-                              Owner: {card.owner || 'Unassigned'} • Deadline: {card.deadline || 'None'}
+                              Owner: {card.owner || 'Unassigned'} · Deadline: {card.deadline || 'None'}
                             </div>
                           </div>
-                          {cardUrl && (
+                          {url && (
                             <a
-                              href={cardUrl}
+                              href={url}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="inline-flex items-center gap-1 px-2.5 py-1 rounded bg-teal-50 text-teal-700 font-semibold hover:bg-teal-100 hover:underline flex-shrink-0 ml-3"
+                              className="inline-flex items-center gap-1 px-2.5 py-1 rounded bg-teal-50 text-teal-700 font-semibold hover:bg-teal-100 flex-shrink-0 ml-3"
                             >
-                              <span>Open Card</span>
-                              <ExternalLink className="w-3 h-3" />
+                              Open <ExternalLink className="w-3 h-3" />
                             </a>
                           )}
                         </div>
@@ -332,21 +357,17 @@ export const PushPreviewModal: React.FC<PushPreviewModalProps> = ({
                 </div>
               )}
 
-              {/* Failures */}
               {executionResult.failed && executionResult.failed.length > 0 && (
                 <div>
                   <h4 className="text-xs font-semibold text-rose-700 uppercase tracking-wider mb-2">
-                    Failed Cards ({executionResult.failed.length})
+                    Failed ({executionResult.failed.length})
                   </h4>
                   <div className="max-h-36 overflow-y-auto space-y-2 pr-1">
                     {executionResult.failed.map((card, idx) => (
-                      <div
-                        key={idx}
-                        className="p-2.5 rounded-lg border border-rose-200 bg-rose-50 text-xs"
-                      >
+                      <div key={idx} className="p-2.5 rounded-lg border border-rose-200 bg-rose-50 text-xs">
                         <div className="font-semibold text-slate-900">{card.title}</div>
                         <div className="text-rose-700 text-[11px] mt-0.5">
-                          Reason: {card.reason || 'Backend integration error.'}
+                          {(card as any).error || 'Integration error.'}
                         </div>
                       </div>
                     ))}
@@ -355,11 +376,7 @@ export const PushPreviewModal: React.FC<PushPreviewModalProps> = ({
               )}
 
               <div className="pt-4 border-t border-slate-100 flex justify-end">
-                <button
-                  type="button"
-                  onClick={handleClose}
-                  className="px-4 py-2 text-xs font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700"
-                >
+                <button type="button" onClick={handleClose} className="px-4 py-2 text-xs font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700">
                   Done
                 </button>
               </div>
