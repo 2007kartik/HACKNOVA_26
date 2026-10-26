@@ -56,7 +56,6 @@ export interface Meeting {
   participants: string[];
   raw_text?: string;
   status: MeetingStatus;
-  summary?: string | null;
   created_at?: string;
   error_message?: string | null;
   items_count?: number;
